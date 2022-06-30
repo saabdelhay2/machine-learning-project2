@@ -24,35 +24,35 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 
 ## Load Required Packages
 
-```{r}
+```{r 2}
 ## Load caret package
 library(caret)
 ```
 
-```{r}
+```{r 3}
 ## Load rpart packages
 library(rpart)
 library(rpart.plot)
 ```
 
-```{r}
+```{r 4}
 ## Load rattle package
 library(rattle)
 ```
 
-```{r}
+```{r 5}
 ## Load random forest package
 library(randomForest)
 ```
 
-```{r}
+```{r 6}
 ## Load gbm package
 library(gbm)
 ```
 
 ## Dowload Data Sets
 
-```{r data sets}
+```{r 7}
 trainURL <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 testURL <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 
@@ -62,20 +62,20 @@ download.file(testURL, destfile = "testing.csv")
 
 ## Load Data Sets
 
-```{r}
+```{r 8}
 org_training <- read.csv("training.csv")
 org_testing <- read.csv("testing.csv")
 dim(org_training)
 ```
 ## Convert classe predictor to factor
 
-```{r}
+```{r 9}
 org_training$classe <- as.factor(org_training$classe)
 ```
 
 ## Remove near-zero variance predictors
 
-```{r}
+```{r 10}
 vars <- nearZeroVar(org_training)
 org_training_data <- org_training[,-vars]
 org_testing_data <- org_testing[,-vars]
@@ -84,7 +84,7 @@ dim(org_testing_data)
 
 ## Remove predictors having more than 95% NA's
 
-```{r}
+```{r 11}
 nas <- sapply(org_training_data, function(x) mean(is.na(x))) > 0.95
 org_training_data <- org_training_data[,nas == FALSE]
 org_testing_data <- org_testing_data[,nas == FALSE]
@@ -93,7 +93,7 @@ dim(org_training_data)
 
 ## remove non-numeric predictors
 
-```{r}
+```{r 12}
 org_training_data <- org_training_data[,8:59]
 org_testing_data <- org_testing_data[,8:59]
 dim(org_training_data)
@@ -101,19 +101,19 @@ dim(org_training_data)
 
 ## Check training data column names
 
-```{r}
+```{r 13}
 names(org_training_data)
 ```
 
 ## Check testing data column names
 
-```{r}
+```{r 14}
 names(org_testing_data)
 ```
 
 ## Partition org_training data in training and testing sets
 
-```{r}
+```{r 15}
 inTrain <- createDataPartition(org_training_data$classe,
                                p = 0.6, list = FALSE)
 training <- org_training_data[inTrain,]
@@ -122,54 +122,45 @@ dim(training)
 ```
 ### Create Decision Tree Model
 
-```{r}
+```{r 16}
 rpartModel <- train(classe ~ ., data = training, 
                     method = "rpart")
 ```
 
 ## Perform predictions on testing data set
 
-```{r}
+```{r 17}
 rpartPred <- predict(rpartModel, newdata = testing)
 confusionMatrix(rpartPred, testing$classe)
 ```
 ## Plot rpart tree
 
-```{r}
+```{r 18}
 rpart.plot(rpartModel$finalModel, roundint = FALSE)
 ```
 
 ## Create Random Forest Model
 
-```{r}
+```{r 19}
 rfModel <- train(classe ~ ., data = training, method = "rf",
                  ntree = 25)
 ```
 
 ## Perform predictions on testing data set
 
-```{r}
+```{r 20}
 rfPred <- predict(rfModel, newdata = testing)
 confusionMatrix(rfPred, testing$classe)
 ```
 ### Plot random forest errors
 
-```{r}
+```{r 21}
 plot(rfModel$finalModel)
 ```
 
-## Create GBM Model
-
-```{r}
-gbmModel <- train(classe ~ ., data = training, method = "gbm", 
-                  n.trees = 25, verbose = FALSE)
-```
-
-Model failed and did not converge
-
 ## Predict on org_testing_data usin rfModel
 
-```{r}
+```{r 23}
 predictions <- predict(rfModel, newdata = org_testing_data)
 predictions
 ```
