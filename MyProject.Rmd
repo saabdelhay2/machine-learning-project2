@@ -1,0 +1,177 @@
+---
+title: "Course Project"
+author: "Sofyan Abdelhay"
+date: '2022-06-30'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+## Data Source Links
+
+The training data for this project are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+## Load Required Packages
+
+```{r}
+## Load caret package
+library(caret)
+```
+
+```{r}
+## Load rpart packages
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+## Load rattle package
+library(rattle)
+```
+
+```{r}
+## Load random forest package
+library(randomForest)
+```
+
+```{r}
+## Load gbm package
+library(gbm)
+```
+
+## Dowload Data Sets
+
+```{r data sets}
+trainURL <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testURL <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+download.file(trainURL, destfile = "training.csv")
+download.file(testURL, destfile = "testing.csv")
+```
+
+## Load Data Sets
+
+```{r}
+org_training <- read.csv("training.csv")
+org_testing <- read.csv("testing.csv")
+dim(org_training)
+```
+## Convert classe predictor to factor
+
+```{r}
+org_training$classe <- as.factor(org_training$classe)
+```
+
+## Remove near-zero variance predictors
+
+```{r}
+vars <- nearZeroVar(org_training)
+org_training_data <- org_training[,-vars]
+org_testing_data <- org_testing[,-vars]
+dim(org_testing_data)
+```
+
+## Remove predictors having more than 95% NA's
+
+```{r}
+nas <- sapply(org_training_data, function(x) mean(is.na(x))) > 0.95
+org_training_data <- org_training_data[,nas == FALSE]
+org_testing_data <- org_testing_data[,nas == FALSE]
+dim(org_training_data)
+```
+
+## remove non-numeric predictors
+
+```{r}
+org_training_data <- org_training_data[,8:59]
+org_testing_data <- org_testing_data[,8:59]
+dim(org_training_data)
+```
+
+## Check training data column names
+
+```{r}
+names(org_training_data)
+```
+
+## Check testing data column names
+
+```{r}
+names(org_testing_data)
+```
+
+## Partition org_training data in training and testing sets
+
+```{r}
+inTrain <- createDataPartition(org_training_data$classe,
+                               p = 0.6, list = FALSE)
+training <- org_training_data[inTrain,]
+testing <- org_training_data[-inTrain,]
+dim(training)
+```
+### Create Decision Tree Model
+
+```{r}
+rpartModel <- train(classe ~ ., data = training, 
+                    method = "rpart")
+```
+
+## Perform predictions on testing data set
+
+```{r}
+rpartPred <- predict(rpartModel, newdata = testing)
+confusionMatrix(rpartPred, testing$classe)
+```
+## Plot rpart tree
+
+```{r}
+rpart.plot(rpartModel$finalModel, roundint = FALSE)
+```
+
+## Create Random Forest Model
+
+```{r}
+rfModel <- train(classe ~ ., data = training, method = "rf",
+                 ntree = 25)
+```
+
+## Perform predictions on testing data set
+
+```{r}
+rfPred <- predict(rfModel, newdata = testing)
+confusionMatrix(rfPred, testing$classe)
+```
+### Plot random forest errors
+
+```{r}
+plot(rfModel$finalModel)
+```
+
+## Create GBM Model
+
+```{r}
+gbmModel <- train(classe ~ ., data = training, method = "gbm", 
+                  n.trees = 25, verbose = FALSE)
+```
+
+Model failed and did not converge
+
+## Predict on org_testing_data usin rfModel
+
+```{r}
+predictions <- predict(rfModel, newdata = org_testing_data)
+predictions
+```
+
+Random forest model achieved the best accuracy of 0.99
